@@ -234,7 +234,9 @@ class NowCard extends StatelessWidget {
               if (task.nextStep != null) ...[
                 const SizedBox(height: 10),
                 Text(
-                  'First tiny step: ${task.nextStep!.title}',
+                  task.completedSteps == 0
+                      ? 'First tiny step: ${task.nextStep!.title}'
+                      : 'Next step: ${task.nextStep!.title}',
                   style: text.bodyMedium?.copyWith(color: on),
                 ),
               ],
