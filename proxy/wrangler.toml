@@ -1,0 +1,8 @@
+name = "brightday-breakdown"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Secrets (set with `npx wrangler secret put NAME`):
+#   ANTHROPIC_API_KEY  required
+#   APP_TOKEN          recommended; must match BREAKDOWN_API_TOKEN in the app build
