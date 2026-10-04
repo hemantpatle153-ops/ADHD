@@ -1,4 +1,4 @@
-package com.brightday.brightday
+package com.brightday.planner
 
 import io.flutter.embedding.android.FlutterActivity
 
