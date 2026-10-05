@@ -85,6 +85,10 @@ jobs:
           --dart-define=SUPPORT_EMAIL=${{ vars.SUPPORT_EMAIL }}
 
       - name: Build test APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: >
           flutter build apk --release --split-per-abi
           --build-number=${{ github.run_number }}
