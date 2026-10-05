@@ -195,30 +195,11 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<String?> _askName(BuildContext context, String current) {
-    final c = TextEditingController(text: current);
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Your name'),
-        content: TextField(
-          controller: c,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, c.text.trim()),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    ).whenComplete(c.dispose);
-  }
+  Future<String?> _askName(BuildContext context, String current) =>
+      showDialog<String>(
+        context: context,
+        builder: (context) => _NameDialog(initial: current),
+      );
 
   Future<void> _confirmDelete(BuildContext context) async {
     final planner = context.read<PlannerController>();
@@ -269,6 +250,49 @@ class _Header extends StatelessWidget {
         style: Theme.of(context).textTheme.labelLarge
             ?.copyWith(color: scheme.primary, fontWeight: FontWeight.w700),
       ),
+    );
+  }
+}
+
+/// Owns its text controller so it is disposed only after the dialog's
+/// closing animation, not while the field is still on screen.
+class _NameDialog extends StatefulWidget {
+  const _NameDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_NameDialog> createState() => _NameDialogState();
+}
+
+class _NameDialogState extends State<_NameDialog> {
+  late final _name = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Your name'),
+      content: TextField(
+        controller: _name,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _name.text.trim()),
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }
