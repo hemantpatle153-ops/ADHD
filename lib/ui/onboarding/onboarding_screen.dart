@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -56,7 +58,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finish() async {
     final reminders = context.read<Reminders>();
     final settings = context.read<SettingsController>();
-    await reminders.requestPermission();
+    // Ask for notifications in the background. Getting into the app must not
+    // depend on the permission dialog or the notification plugin.
+    unawaited(
+      reminders.requestPermission().then<void>(
+        (_) {},
+        onError: (Object e) => debugPrint('Notification permission: $e'),
+      ),
+    );
     await settings.update(
       (s) => s.copyWith(onboardingDone: true, name: _name.text.trim()),
     );

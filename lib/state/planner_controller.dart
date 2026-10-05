@@ -42,7 +42,7 @@ class PlannerController extends ChangeNotifier {
     notifyListeners();
     // Re-arm reminders in case the OS dropped them (app update, restore).
     for (final t in upcomingWithReminders()) {
-      unawaited(_reminders.syncTask(t));
+      unawaited(_remind(() => _reminders.syncTask(t)));
     }
   }
 
@@ -126,14 +126,14 @@ class PlannerController extends ChangeNotifier {
     _tasks[task.id] = task;
     notifyListeners();
     await _persist();
-    await _reminders.syncTask(task);
+    await _remind(() => _reminders.syncTask(task));
   }
 
   Future<void> delete(String id) async {
     if (_tasks.remove(id) == null) return;
     notifyListeners();
     await _persist();
-    await _reminders.cancelTask(id);
+    await _remind(() => _reminders.cancelTask(id));
   }
 
   /// Puts a deleted task back (for "Undo").
@@ -199,11 +199,13 @@ class PlannerController extends ChangeNotifier {
     for (final t in moving) {
       final moved = t.copyWith(day: target);
       _tasks[t.id] = moved;
-      await _reminders.syncTask(moved);
     }
     if (moving.isNotEmpty) {
       notifyListeners();
       await _persist();
+    }
+    for (final t in moving) {
+      await _remind(() => _reminders.syncTask(_tasks[t.id]!));
     }
     return moving.length;
   }
@@ -217,11 +219,21 @@ class PlannerController extends ChangeNotifier {
     notifyListeners();
     await _persist();
     for (final id in ids) {
-      await _reminders.cancelTask(id);
+      await _remind(() => _reminders.cancelTask(id));
     }
   }
 
   Future<void> _persist() => _store.saveAll(_tasks.values.toList());
+
+  /// Tasks are saved before reminders are touched, and a reminder failure is
+  /// logged rather than surfaced: losing a heads-up beats losing a task.
+  Future<void> _remind(Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (e) {
+      debugPrint('Reminder update failed: $e');
+    }
+  }
 
   /// JSON export of every task, for the user's own records.
   List<Map<String, Object?>> exportJson() =>

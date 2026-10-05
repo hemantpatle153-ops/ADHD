@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification icon is only referenced by name from Dart, so resource
+     shrinking can't see it. Without this the release build strips it and
+     every reminder call fails. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_brightday" />

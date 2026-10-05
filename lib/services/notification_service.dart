@@ -79,17 +79,28 @@ class LocalReminders implements Reminders {
         AndroidFlutterLocalNotificationsPlugin
       >();
 
+  /// Reminders are a nice-to-have: a plugin failure must never stop the
+  /// user from finishing onboarding or saving a task.
+  Future<T> _safely<T>(T fallback, Future<T> Function() body) async {
+    try {
+      return await body();
+    } catch (e, st) {
+      debugPrint('Reminders unavailable: $e\n$st');
+      return fallback;
+    }
+  }
+
   @override
-  Future<bool> requestPermission() async {
+  Future<bool> requestPermission() => _safely(false, () async {
     await init();
     return await _android?.requestNotificationsPermission() ?? true;
-  }
+  });
 
   /// Stable 31-bit id per task so rescheduling replaces the old reminder.
   static int idFor(String taskId) => (taskId.hashCode & 0x3fffffff) | 0x100;
 
   @override
-  Future<void> syncTask(PlannerTask task) async {
+  Future<void> syncTask(PlannerTask task) => _safely(null, () async {
     await init();
     final id = idFor(task.id);
     await _plugin.cancel(id: id);
@@ -111,32 +122,35 @@ class LocalReminders implements Reminders {
           : 'Starts in $lead min. A good moment to wrap up what you\'re doing.',
       payload: task.id,
     );
-  }
+  });
 
   @override
-  Future<void> cancelTask(String taskId) async {
+  Future<void> cancelTask(String taskId) => _safely(null, () async {
     await init();
     await _plugin.cancel(id: idFor(taskId));
-  }
+  });
 
   @override
-  Future<void> scheduleFocusEnd(DateTime at, String taskTitle) async {
-    await init();
-    await _plugin.cancel(id: _focusEndId);
-    if (!at.isAfter(DateTime.now())) return;
-    await _plugin.zonedSchedule(
-      id: _focusEndId,
-      scheduledDate: tz.TZDateTime.from(at, tz.local),
-      notificationDetails: const NotificationDetails(android: _focusChannel),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      title: 'Focus session done',
-      body: 'Nice work on "$taskTitle". Take a breath.',
-    );
-  }
+  Future<void> scheduleFocusEnd(DateTime at, String taskTitle) => _safely(
+    null,
+    () async {
+      await init();
+      await _plugin.cancel(id: _focusEndId);
+      if (!at.isAfter(DateTime.now())) return;
+      await _plugin.zonedSchedule(
+        id: _focusEndId,
+        scheduledDate: tz.TZDateTime.from(at, tz.local),
+        notificationDetails: const NotificationDetails(android: _focusChannel),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        title: 'Focus session done',
+        body: 'Nice work on "$taskTitle". Take a breath.',
+      );
+    },
+  );
 
   @override
-  Future<void> cancelFocusEnd() async {
+  Future<void> cancelFocusEnd() => _safely(null, () async {
     await init();
     await _plugin.cancel(id: _focusEndId);
-  }
+  });
 }

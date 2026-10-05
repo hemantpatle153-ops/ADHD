@@ -28,8 +28,14 @@ Future<void> main() async {
 
   await settings.load();
   breakdown.aiAllowed = settings.value.aiEnabled;
-  // Reminder setup can be slow on first launch; don't block the first frame.
-  unawaited(reminders.init().then((_) => planner.load()));
+  // Load tasks right away; reminder setup can be slow on first launch and
+  // must never keep the day view from appearing.
+  unawaited(planner.load());
+  unawaited(
+    reminders.init().catchError(
+      (Object e) => debugPrint('Reminders unavailable: $e'),
+    ),
+  );
 
   runApp(
     BrightdayApp(
